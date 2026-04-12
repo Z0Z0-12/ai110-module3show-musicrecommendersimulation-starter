@@ -9,3 +9,11 @@ id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness
 8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22
 9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78
 10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35
+11,Golden Hour,Velvet Tone,r&b,romantic,0.62,96,0.81,0.77,0.42
+12,Bass Drop Kingdom,XTRCT,electronic,euphoric,0.95,140,0.72,0.91,0.03
+13,Sunday Soul,The Harvest,soul,nostalgic,0.54,84,0.73,0.68,0.65
+14,Rain on Glass,Arcana Strings,classical,melancholic,0.22,52,0.31,0.25,0.97
+15,Iron Curtain,Scarred Earth,metal,angry,0.97,168,0.29,0.57,0.04
+16,Porch Sunset,Dusty Miles,country,peaceful,0.44,88,0.83,0.64,0.76
+17,Daydream Loop,CloudRap,hip-hop,dreamy,0.61,92,0.67,0.83,0.18
+18,Island Drift,Coral Wave,reggae,relaxed,0.51,76,0.88,0.74,0.55
