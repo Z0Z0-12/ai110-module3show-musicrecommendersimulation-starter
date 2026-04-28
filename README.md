@@ -11,7 +11,7 @@ Your goal is to:
 - Evaluate what your system gets right and wrong
 - Reflect on how this mirrors real world AI recommenders
 
-This simulator builds a content-based music recommender that scores every song in an 18-song catalog against a user's taste profile, then returns the top-k matches ranked by score. It focuses on three core signals—genre, mood, and energy level—and adds an optional acoustic-preference bonus. The goal is to show how a handful of numerical weights can turn raw song attributes into a meaningful ranked list.
+This simulator builds a content-based music recommender that scores every song in a 36-song catalog against a user's taste profile, then returns the top-k matches ranked by score. It includes a Streamlit web app, named playlist presets, and richer catalog metadata such as explicit lyrics, popularity, release decade, vocal style, language, and artist-similarity tags. The goal is to show how a handful of numerical weights can turn raw song attributes into a meaningful ranked list.
 
 ---
 
@@ -28,7 +28,7 @@ This version prioritizes **musical vibe** over popularity. A song scores well wh
 ```
 INPUT                    PROCESS                         OUTPUT
 ─────────────────────    ─────────────────────────────   ────────────────────
-UserProfile              For each of the 18 songs        Ranked list
+UserProfile              For each of the 36 songs        Ranked list
   favorite_genre    ──►    score_song(user, song)   ──►  Top-K songs
   favorite_mood            └─ genre match check          with scores +
   target_energy            └─ mood match check           explanations
@@ -50,6 +50,12 @@ UserProfile              For each of the 18 songs        Ranked list
 | `danceability` | float 0–1 | Rhythmic drivability; useful for workout-profile experiments |
 | `acousticness` | float 0–1 | Acoustic bonus (+1.0) when `likes_acoustic = True` and value > 0.6 |
 | `tempo_bpm` | float | Beats per minute; stored for tempo-range experiments |
+| `explicit` | bool | Used as a hard filter when clean recommendations are required |
+| `popularity` | int 0-100 | Small ranking boost for broadly popular songs |
+| `release_decade` | string | Optional preference for eras like 1990s, 2010s, or 2020s |
+| `vocal_style` | string | Supports vocal vs instrumental preferences |
+| `language` | string | Optional language preference |
+| `artist_similarity` | string | Pipe-separated similar artists used for discovery boosts |
 
 The catalog covers 10 genres (pop, lofi, rock, ambient, jazz, synthwave, indie pop, r&b, electronic, soul, classical, metal, country, hip-hop, reggae) and 11 moods (happy, chill, intense, relaxed, moody, focused, romantic, euphoric, nostalgic, melancholic, angry, peaceful, dreamy).
 
@@ -85,7 +91,7 @@ Genre is worth twice as much as mood because listeners tend to stay within a gen
 
 ```mermaid
 flowchart TD
-    A["User Preferences\n(genre · mood · energy · likes_acoustic)"] --> B["Load songs.csv\n18 songs"]
+    A["User Preferences\n(genre · mood · energy · likes_acoustic)"] --> B["Load songs.csv\n36 songs"]
     B --> C{"For each song in catalog"}
     C --> D{"Genre match?"}
     D -- Yes --> E["+2.0 pts"]
@@ -102,7 +108,7 @@ flowchart TD
     L --> N["Song Score = sum of all points"]
     M --> N
     N --> C
-    C --> O["All 18 songs scored"]
+    C --> O["All 36 songs scored"]
     O --> P["Sort by score descending"]
     P --> Q["Return Top-K Recommendations"]
 ```
@@ -113,7 +119,7 @@ flowchart TD
 
 - **Genre dominance**: Because a genre match is worth +2.0 and the max energy bonus is +1.5, any song in the right genre will almost always outscore a perfect-energy song in the wrong genre. A great lofi track could be buried below a mediocre pop track for a pop-preferring user.
 - **Narrow mood vocabulary**: The system uses exact string matching for mood. A user who feels "happy" will not match songs tagged "euphoric" even though those moods are closely related.
-- **Underrepresented genres**: The 18-song catalog has only 1 song per new genre (metal, reggae, country, etc.). Users who prefer those genres will receive fewer truly matching results and get energy-proximity runners-up instead.
+- **Underrepresented genres**: The 36-song catalog is broader than the starter version, but some genres still have fewer examples than pop, lofi, and electronic. Users who prefer sparse genres may receive more energy-proximity runners-up.
 - **Binary acoustic preference**: `likes_acoustic` is a yes/no flag. A user who "sort of" likes acoustic instruments has no way to express partial preference.
 
 ---
@@ -140,6 +146,18 @@ pip install -r requirements.txt
 ```bash
 python -m src.main
 ```
+
+4. Run the web app:
+
+```bash
+streamlit run src/app.py
+```
+
+The web UI has three tabs:
+
+- **Recommendations:** choose genre, mood, energy, acoustic preference, explicit filtering, and advanced metadata preferences.
+- **Playlist Generator:** generate workout, study, relaxing evening, or high-energy party playlists from preset constraints.
+- **Catalog:** inspect the expanded song catalog and its richer features.
 
 ### Running Tests
 
@@ -363,7 +381,7 @@ Running `python -m src.main` with four profiles + one experimental weight-shift 
 
 ## Limitations and Risks
 
-- **Tiny catalog:** 18 songs is enough to demonstrate the logic but not enough to produce useful variety. Genres with only one song always return that song first regardless of how bad the other attributes match.
+- **Small catalog:** 36 songs is enough to demonstrate the logic and UI, but still not enough to mimic real streaming-scale variety. Sparse genres can still overfit to a small number of examples.
 - **Genre dominance:** The genre weight (2.0) is large enough to push a wrong-energy song to the top of the list. The adversarial test proved this: an angry metal song at energy 0.97 ranked #1 for a user who asked for peaceful energy 0.2.
 - **Synonym-blind mood matching:** "happy" and "euphoric" score identically to "happy" and "metal" — both return zero mood points. The system treats unrelated and closely related moods the same way.
 - **No memory or feedback loop:** The system cannot learn from skips, replays, or likes. Every run starts fresh from the same static weights.
@@ -380,5 +398,4 @@ See [model_card.md](model_card.md) for a deeper analysis of each limitation.
 Building this project made visible something that is easy to miss when you use Spotify or YouTube: recommendations are the output of arithmetic. A song rises to the top not because the system "understood" what you wanted, but because numbers lined up in a way that produced a high score. The Chill Lofi Study profile returned exactly the right songs — but that felt meaningful only because the weights happened to reflect real musical taste. Change two numbers and the whole system shifts. That is a lot of power to put in a weight table that no one usually sees.
 
 The clearest lesson about bias came from the adversarial test. A metal song with energy 0.97 outranked a country song that genuinely matched the user's peaceful, low-energy request — purely because the genre label string matched. No real listener would accept that result, but the math produced it without hesitation. This is exactly how real systems can silently over-recommend certain genres or artists at scale, and why publishing a model card — documenting what the system does and does not do — is an important practice even for small projects.
-
 

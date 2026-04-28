@@ -1,19 +1,37 @@
-id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness
-1,Sunrise City,Neon Echo,pop,happy,0.82,118,0.84,0.79,0.18
-2,Midnight Coding,LoRoom,lofi,chill,0.42,78,0.56,0.62,0.71
-3,Storm Runner,Voltline,rock,intense,0.91,152,0.48,0.66,0.10
-4,Library Rain,Paper Lanterns,lofi,chill,0.35,72,0.60,0.58,0.86
-5,Gym Hero,Max Pulse,pop,intense,0.93,132,0.77,0.88,0.05
-6,Spacewalk Thoughts,Orbit Bloom,ambient,chill,0.28,60,0.65,0.41,0.92
-7,Coffee Shop Stories,Slow Stereo,jazz,relaxed,0.37,90,0.71,0.54,0.89
-8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22
-9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78
-10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35
-11,Golden Hour,Velvet Tone,r&b,romantic,0.62,96,0.81,0.77,0.42
-12,Bass Drop Kingdom,XTRCT,electronic,euphoric,0.95,140,0.72,0.91,0.03
-13,Sunday Soul,The Harvest,soul,nostalgic,0.54,84,0.73,0.68,0.65
-14,Rain on Glass,Arcana Strings,classical,melancholic,0.22,52,0.31,0.25,0.97
-15,Iron Curtain,Scarred Earth,metal,angry,0.97,168,0.29,0.57,0.04
-16,Porch Sunset,Dusty Miles,country,peaceful,0.44,88,0.83,0.64,0.76
-17,Daydream Loop,CloudRap,hip-hop,dreamy,0.61,92,0.67,0.83,0.18
-18,Island Drift,Coral Wave,reggae,relaxed,0.51,76,0.88,0.74,0.55
+id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness,explicit,popularity,release_decade,vocal_style,language,artist_similarity
+1,Sunrise City,Neon Echo,pop,happy,0.82,118,0.84,0.79,0.18,false,88,2020s,vocal,English,Indigo Parade|Max Pulse
+2,Midnight Coding,LoRoom,lofi,chill,0.42,78,0.56,0.62,0.71,false,74,2020s,instrumental,English,Paper Lanterns|Orbit Bloom
+3,Storm Runner,Voltline,rock,intense,0.91,152,0.48,0.66,0.10,false,72,2010s,vocal,English,Scarred Earth|Max Pulse
+4,Library Rain,Paper Lanterns,lofi,chill,0.35,72,0.60,0.58,0.86,false,69,2020s,instrumental,English,LoRoom|Arcana Strings
+5,Gym Hero,Max Pulse,pop,intense,0.93,132,0.77,0.88,0.05,false,83,2020s,vocal,English,Neon Echo|XTRCT
+6,Spacewalk Thoughts,Orbit Bloom,ambient,chill,0.28,60,0.65,0.41,0.92,false,61,2010s,instrumental,English,LoRoom|Paper Lanterns
+7,Coffee Shop Stories,Slow Stereo,jazz,relaxed,0.37,90,0.71,0.54,0.89,false,58,2000s,vocal,English,Velvet Tone|The Harvest
+8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22,false,76,2020s,vocal,English,Indigo Parade|XTRCT
+9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78,false,79,2020s,instrumental,English,Paper Lanterns|Orbit Bloom
+10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35,false,81,2020s,vocal,English,Neon Echo|Velvet Tone
+11,Golden Hour,Velvet Tone,r&b,romantic,0.62,96,0.81,0.77,0.42,false,73,2010s,vocal,English,The Harvest|Slow Stereo
+12,Bass Drop Kingdom,XTRCT,electronic,euphoric,0.95,140,0.72,0.91,0.03,true,86,2020s,vocal,English,Max Pulse|Neon Echo
+13,Sunday Soul,The Harvest,soul,nostalgic,0.54,84,0.73,0.68,0.65,false,66,1990s,vocal,English,Velvet Tone|Slow Stereo
+14,Rain on Glass,Arcana Strings,classical,melancholic,0.22,52,0.31,0.25,0.97,false,57,2000s,instrumental,English,Paper Lanterns|Orbit Bloom
+15,Iron Curtain,Scarred Earth,metal,angry,0.97,168,0.29,0.57,0.04,true,64,2010s,vocal,English,Voltline|Grave Signal
+16,Porch Sunset,Dusty Miles,country,peaceful,0.44,88,0.83,0.64,0.76,false,63,1990s,vocal,English,The Harvest|Slow Stereo
+17,Daydream Loop,CloudRap,hip-hop,dreamy,0.61,92,0.67,0.83,0.18,true,78,2020s,vocal,English,Velvet Tone|Neon Echo
+18,Island Drift,Coral Wave,reggae,relaxed,0.51,76,0.88,0.74,0.55,false,70,2000s,vocal,English,Dusty Miles|The Harvest
+19,Afterglow Sprint,Astra Lane,pop,euphoric,0.89,128,0.86,0.90,0.12,false,91,2020s,vocal,English,Neon Echo|Max Pulse
+20,Quiet Syntax,Byte Garden,lofi,focused,0.31,70,0.52,0.49,0.82,false,67,2020s,instrumental,English,LoRoom|Paper Lanterns
+21,Velvet Static,Blue Circuit,synthwave,dreamy,0.68,104,0.55,0.70,0.28,false,62,2010s,instrumental,English,Neon Echo|Orbit Bloom
+22,Open Road Chorus,The Turnpike,country,happy,0.66,106,0.80,0.71,0.58,false,59,2000s,vocal,English,Dusty Miles|Coral Wave
+23,Metro Pulse,DJ Prisma,electronic,euphoric,0.90,126,0.75,0.93,0.06,false,84,2020s,instrumental,English,XTRCT|Max Pulse
+24,Late Train Letters,North Window,indie pop,nostalgic,0.48,94,0.62,0.61,0.52,false,65,2010s,vocal,English,Indigo Parade|Slow Stereo
+25,Blue Lantern Trio,Blue Lantern,jazz,peaceful,0.30,82,0.69,0.45,0.91,false,55,1990s,instrumental,English,Slow Stereo|Arcana Strings
+26,Starlit Serenade,Luna Clara,latin,romantic,0.72,116,0.87,0.86,0.49,false,77,2020s,vocal,Spanish,Velvet Tone|Coral Wave
+27,Festival Hearts,Sol Brillante,latin,happy,0.88,122,0.92,0.89,0.34,false,82,2020s,vocal,Spanish,Astra Lane|Coral Wave
+28,Neon Alley Verse,Verse District,hip-hop,intense,0.84,98,0.58,0.87,0.09,true,80,2020s,vocal,English,CloudRap|XTRCT
+29,Breathing Room,Hush Harbor,ambient,peaceful,0.18,56,0.64,0.22,0.95,false,60,2020s,instrumental,English,Orbit Bloom|Arcana Strings
+30,Silver Machine,Grave Signal,metal,intense,0.94,160,0.37,0.61,0.03,true,68,2020s,vocal,English,Scarred Earth|Voltline
+31,Cloud Market,Mika Vale,r&b,chill,0.50,88,0.76,0.74,0.44,false,71,2020s,vocal,English,Velvet Tone|CloudRap
+32,Golden Circuit,Nova Kai,k-pop,happy,0.86,125,0.90,0.92,0.17,false,89,2020s,vocal,Korean,Astra Lane|Neon Echo
+33,Moonlit Steps,Nova Kai,k-pop,romantic,0.58,100,0.74,0.78,0.24,false,85,2020s,vocal,Korean,Velvet Tone|Astra Lane
+34,River Hymn,Echo Vale,folk,peaceful,0.29,74,0.70,0.43,0.93,false,56,2010s,vocal,English,Dusty Miles|Blue Lantern
+35,Deep Work Signal,Byte Garden,electronic,focused,0.46,112,0.50,0.66,0.20,false,64,2020s,instrumental,English,LoRoom|DJ Prisma
+36,Fireline Radio,Astra Lane,pop,happy,0.87,121,0.89,0.85,0.14,false,87,2020s,vocal,English,Neon Echo|Indigo Parade
