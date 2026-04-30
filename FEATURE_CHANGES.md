@@ -324,6 +324,80 @@ source .venv/bin/activate
 python -m src.main
 ```
 
+## 10. Chat Assistant with Gemini RAG
+
+### What changed
+
+The project now includes a retrieval-augmented music chat assistant. A user can describe a mood, instrument, or listening situation in natural language, and the assistant retrieves matching catalog songs before answering. For real-world song lookups outside the project dataset, the chat can also search Apple's public iTunes music catalog. If Gemini is configured, Gemini writes the final grounded response; if not, the app still returns a local retrieval-based answer.
+
+### New files or code
+
+- `src/rag.py`
+- `src/external_music.py`
+- Chat tab in `src/app.py`
+
+### How it is different
+
+Before:
+
+- The app only returned ranked recommendation cards
+- Users could see scoring explanations one song at a time
+- There was no natural-language assistant for asking questions about the catalog or recommender logic
+
+Now:
+
+- Users can ask natural-language questions like "I want very dramatic music with violins"
+- The app retrieves relevant songs and project documentation before answering
+- The assistant recommends one or two catalog songs instead of dumping raw search results
+- Instrument-style queries use catalog metadata plus inferred instrument tags such as strings, piano, guitar, synths, and drums
+- Questions about songs outside the local catalog can fall back to iTunes catalog search instead of being guessed
+- Gemini answers are instructed to stay grounded in the retrieved context and cite chunk IDs such as `[song-4]`
+- If Gemini is not configured, the app still shows the retrieved context as a deterministic fallback
+- Logging tracks catalog loading, RAG retrieval, Gemini generation attempts, external search, and fallback behavior
+- Tests cover RAG retrieval, unsupported outside-catalog questions, and external-search routing
+
+### How to use it
+
+1. Rotate any API key that was shared publicly or pasted into chat.
+2. Set a new key as an environment variable:
+
+```bash
+export GEMINI_API_KEY="your-new-key"
+```
+
+Or create a local `.streamlit/secrets.toml` file:
+
+```toml
+GEMINI_API_KEY = "your-new-key"
+```
+
+3. Run the app:
+
+```bash
+streamlit run src/app.py
+```
+
+4. Open the **Chat** tab.
+5. Type a message into the music chat, such as:
+
+```text
+I want very dramatic music with violins.
+```
+
+or:
+
+```text
+What instruments are used in Rain on Glass?
+```
+
+or:
+
+```text
+Find Boulevard of Broken Dreams from the internet.
+```
+
+The API key should never be committed to git. `.streamlit/secrets.toml` is ignored by `.gitignore`.
+
 ## Quick Summary
 
 | Area | Before | Now |
@@ -335,5 +409,5 @@ python -m src.main
 | Playlists | Not available | Workout, study, relaxing evening, party |
 | UI design | Basic/default | Bright custom music-themed UI |
 | Testing | Starter tests | Tests for catalog, filters, and playlists |
+| RAG | Not available | Chat assistant with local retrieval, Gemini grounding, guardrails, and iTunes fallback |
 | CLI | Available | Still available |
-

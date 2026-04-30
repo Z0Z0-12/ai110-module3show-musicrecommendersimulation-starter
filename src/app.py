@@ -1,5 +1,6 @@
 """Streamlit web app for the Music Recommender Simulation."""
 
+import logging
 from pathlib import Path
 import sys
 
@@ -15,14 +16,18 @@ from src.recommender import (
     load_songs,
     recommend_songs,
 )
+from src.rag import DEFAULT_GEMINI_MODEL, answer_with_rag
 
 
 DATA_PATH = ROOT_DIR / "data" / "songs.csv"
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+logger = logging.getLogger(__name__)
 
 
 @st.cache_data
 def cached_songs():
     """Load the song catalog once per Streamlit session."""
+    logger.info("Loading song catalog", extra={"path": str(DATA_PATH)})
     return load_songs(str(DATA_PATH))
 
 
@@ -72,6 +77,14 @@ def render_results(results):
 
     for rank, (song, score, reasons) in enumerate(results, start=1):
         render_song_card(rank, song, score, reasons)
+
+
+def streamlit_gemini_key():
+    """Read Gemini credentials from Streamlit secrets when available."""
+    try:
+        return st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
+    except Exception:
+        return None
 
 
 def main():
@@ -392,8 +405,8 @@ def main():
         unsafe_allow_html=True,
     )
 
-    recommend_tab, playlist_tab, catalog_tab = st.tabs(
-        ["Recommendations", "Playlist Generator", "Catalog"]
+    recommend_tab, playlist_tab, chat_tab, catalog_tab = st.tabs(
+        ["Recommendations", "Playlist Generator", "Chat", "Catalog"]
     )
 
     with recommend_tab:
@@ -460,6 +473,63 @@ def main():
         with results_col:
             st.markdown(f'<div class="section-title">{selected_label}</div>', unsafe_allow_html=True)
             render_results(generate_playlist(preset_key, songs, k=playlist_size, overrides=overrides))
+
+    with chat_tab:
+        chat_col, info_col = st.columns([0.66, 0.34], gap="large")
+
+        if "rag_messages" not in st.session_state:
+            st.session_state.rag_messages = [
+                {
+                    "role": "assistant",
+                    "content": (
+                        "Tell me what kind of music you want, like \"I want dramatic music with violins,\" "
+                        "or ask for a real song from the wider music catalog."
+                    ),
+                    "sources": [],
+                }
+            ]
+
+        with info_col:
+            if st.button("Clear chat"):
+                st.session_state.rag_messages = st.session_state.rag_messages[:1]
+                st.rerun()
+
+        with chat_col:
+            st.markdown('<div class="section-title">Music Chat</div>', unsafe_allow_html=True)
+            for message in st.session_state.rag_messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+            prompt = st.chat_input("Describe your mood, vibe, instrument, or song question")
+            if "pending_rag_prompt" in st.session_state:
+                prompt = st.session_state.pop("pending_rag_prompt")
+
+            if prompt:
+                st.session_state.rag_messages.append({"role": "user", "content": prompt, "sources": []})
+                with st.chat_message("user"):
+                    st.markdown(prompt)
+
+                with st.chat_message("assistant"):
+                    try:
+                        answer, sources = answer_with_rag(
+                            prompt,
+                            songs,
+                            api_key=streamlit_gemini_key(),
+                            model=DEFAULT_GEMINI_MODEL,
+                            use_gemini=True,
+                        )
+                        st.markdown(answer)
+                        source_labels = [
+                            f"[{chunk.id}] {chunk.title} - {chunk.source} - relevance {score:.2f}"
+                            for chunk, score in sources
+                        ]
+                    except Exception as exc:
+                        answer = "I could not answer that from the retrieved catalog context. Try asking for a mood, instrument, or song that appears in the Catalog tab."
+                        source_labels = []
+                        st.warning(answer)
+                st.session_state.rag_messages.append(
+                    {"role": "assistant", "content": answer, "sources": source_labels}
+                )
 
     with catalog_tab:
         st.markdown('<div class="section-title">Expanded Song Catalog</div>', unsafe_allow_html=True)

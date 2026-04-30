@@ -6,6 +6,7 @@ from src.recommender import (
     load_songs,
     recommend_songs,
 )
+from src.rag import answer_with_rag, build_rag_prompt, retrieve_context
 
 def make_small_recommender() -> Recommender:
     songs = [
@@ -126,3 +127,88 @@ def test_generate_playlist_returns_named_playlist_results():
     assert len(results) == 5
     assert all(not song["explicit"] for song, _, _ in results)
     assert results[0][1] >= results[-1][1]
+
+
+def test_rag_retrieves_catalog_and_project_context():
+    songs = load_songs("data/songs.csv")
+    results = retrieve_context(
+        "clean study playlist with lofi instrumental songs",
+        songs,
+        user_prefs={"genre": "lofi", "mood": "focused", "energy": 0.35, "allow_explicit": False},
+        k=5,
+    )
+
+    assert results
+    assert any(chunk.source == "data/songs.csv" for chunk, _ in results)
+
+
+def test_rag_prompt_includes_citations():
+    songs = load_songs("data/songs.csv")
+    retrieved = retrieve_context("How does the playlist generator work?", songs, k=3)
+    prompt = build_rag_prompt("How does the playlist generator work?", retrieved)
+
+    assert "Answer only from the provided context" in prompt
+    assert "[" in prompt and "]" in prompt
+
+
+def test_rag_falls_back_without_gemini_key():
+    songs = load_songs("data/songs.csv")
+    answer, sources = answer_with_rag(
+        "Recommend a relaxing evening option",
+        songs,
+        use_gemini=False,
+    )
+
+    assert "Gemini is not configured" in answer
+    assert sources
+
+
+def test_rag_understands_dramatic_violin_request():
+    songs = load_songs("data/songs.csv")
+    answer, sources = answer_with_rag(
+        "I want very dramatic music with violins",
+        songs,
+        use_gemini=False,
+    )
+
+    assert "Rain on Glass" in answer
+    assert any(chunk.id == "song-14" for chunk, _ in sources)
+
+
+def test_rag_does_not_guess_external_song_facts():
+    songs = load_songs("data/songs.csv")
+    answer, sources = answer_with_rag(
+        "What instruments are used in the song Boulevard of Broken Dreams?",
+        songs,
+        use_gemini=False,
+        allow_external_search=False,
+    )
+
+    assert "local catalog" in answer
+    assert sources == []
+
+
+def test_rag_can_use_external_song_search(monkeypatch):
+    songs = load_songs("data/songs.csv")
+
+    class FakeExternalSong:
+        title = "Boulevard of Broken Dreams"
+        artist = "Green Day"
+        album = "American Idiot"
+        genre = "Alternative"
+        release_date = "2004-09-21"
+        explicitness = "notExplicit"
+        track_url = "https://example.com/song"
+        preview_url = None
+
+    monkeypatch.setattr("src.rag.search_itunes_songs", lambda query, limit=3: [FakeExternalSong()])
+
+    answer, sources = answer_with_rag(
+        "Find Boulevard of Broken Dreams from the internet",
+        songs,
+        use_gemini=False,
+    )
+
+    assert "iTunes music catalog" in answer
+    assert "Boulevard of Broken Dreams" in answer
+    assert sources == []

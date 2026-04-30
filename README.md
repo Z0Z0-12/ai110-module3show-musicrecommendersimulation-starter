@@ -1,19 +1,65 @@
-# 🎵 Music Recommender Simulation
+# Music Recommender Simulation
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
+This project is an explainable music recommendation app with a Streamlit interface, playlist presets, and a Chat assistant powered by retrieval-augmented generation (RAG). It helps a user find songs by genre, mood, energy, listening situation, instrument, or real-world song lookup while making the recommendation logic visible through scores and explanations.
 
-Your goal is to:
+The project matters because recommendation systems can feel like black boxes. This app keeps the recommendation pipeline inspectable: users can see which signals were used, developers can test the behavior, and the Chat feature is guarded so it retrieves context before answering instead of inventing unsupported results.
 
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
+## Original Modules 1-3 Project
 
-This simulator builds a content-based music recommender that scores every song in a 36-song catalog against a user's taste profile, then returns the top-k matches ranked by score. It includes a Streamlit web app, named playlist presets, and richer catalog metadata such as explicit lyrics, popularity, release decade, vocal style, language, and artist-similarity tags. The goal is to show how a handful of numerical weights can turn raw song attributes into a meaningful ranked list.
+The original Modules 1-3 project was a command-line music recommender simulation. Its goal was to represent songs and user taste profiles as data, apply a weighted scoring rule, and return top recommendations from a small local catalog. The original version was useful for learning how recommendation scores work, but it had fixed inputs, terminal-only output, fewer catalog fields, and no AI chat or external retrieval.
+
+This extension turns that starter recommender into a portfolio-style product:
+
+- Browser-based Streamlit UI
+- Expanded 36-song catalog
+- Advanced filters and playlist presets
+- Chat assistant with RAG over local project data
+- External iTunes catalog search for real-world song lookup requests
+- Tests, logging, and guardrails
 
 ---
+
+## Architecture Overview
+
+The app has two recommendation paths:
+
+- **Structured recommender path:** UI preferences go into `recommend_songs()`, which scores every local song and returns ranked cards with explanations.
+- **Chat/RAG path:** A user message goes through query understanding, local retrieval, optional Gemini generation, and external iTunes search when the local catalog cannot answer a real-world song lookup.
+
+```mermaid
+flowchart TD
+    U["Human user"] --> UI["Streamlit app<br/>Recommendations · Playlist Generator · Chat · Catalog"]
+
+    UI --> P["Preference controls"]
+    P --> R["Local recommender<br/>src/recommender.py"]
+    CSV["data/songs.csv<br/>36-song catalog"] --> R
+    R --> Cards["Ranked song cards<br/>scores + explanations"]
+
+    UI --> Chat["Chat message"]
+    Chat --> Intent["Query understanding<br/>mood, instrument, song lookup"]
+    Intent --> Retriever["RAG retriever<br/>src/rag.py"]
+    CSV --> Retriever
+    Docs["README.md + FEATURE_CHANGES.md<br/>project context"] --> Retriever
+    Retriever --> Guard["Guardrails<br/>grounding + citation checks"]
+    Guard --> Gemini{"Gemini key configured?"}
+    Gemini -- Yes --> LLM["Gemini grounded answer"]
+    Gemini -- No --> Fallback["Deterministic local answer"]
+    Guard --> External["iTunes Search API<br/>real-world song lookup"]
+    External --> ChatAnswer["Chat answer"]
+    LLM --> ChatAnswer
+    Fallback --> ChatAnswer
+
+    Tests["pytest tests<br/>tests/test_recommender.py"] --> R
+    Tests --> Retriever
+    Tests --> Guard
+    Logs["Logging<br/>retrieval/search/fallback paths"] --> Guard
+```
+
+**Data flow:** user input -> Streamlit UI -> recommender or Chat pipeline -> local CSV/docs retrieval -> guarded answer or ranked results.
+
+**Human and testing checks:** the user can inspect scores, reasons, catalog rows, and chat responses in the UI. Automated tests check ranking behavior, filters, playlist generation, RAG retrieval, guardrails, and external-search routing.
 
 ## How The System Works
 
@@ -130,10 +176,11 @@ flowchart TD
 
 1. Create a virtual environment (optional but recommended):
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Mac or Linux
+.venv\Scripts\activate         # Windows
+```
 
 2. Install dependencies
 
@@ -153,11 +200,126 @@ python -m src.main
 streamlit run src/app.py
 ```
 
-The web UI has three tabs:
+The web UI has four tabs:
 
 - **Recommendations:** choose genre, mood, energy, acoustic preference, explicit filtering, and advanced metadata preferences.
 - **Playlist Generator:** generate workout, study, relaxing evening, or high-energy party playlists from preset constraints.
+- **Chat:** ask for songs by mood, instrument, or listening situation; the app uses local catalog retrieval first and can search iTunes for real-world song lookups.
 - **Catalog:** inspect the expanded song catalog and its richer features.
+
+### Optional Gemini RAG Setup
+
+The RAG retriever works without a Gemini key and will show the retrieved context as a fallback. To enable generated answers, rotate any key that has been shared publicly, then set a fresh key locally:
+
+```bash
+export GEMINI_API_KEY="your-new-key"
+```
+
+For Streamlit, you can also create `.streamlit/secrets.toml`:
+
+```toml
+GEMINI_API_KEY = "your-new-key"
+```
+
+Do not commit API keys. `.streamlit/secrets.toml` is ignored by git.
+
+### External Song Search
+
+The main recommender still scores the local `data/songs.csv` catalog so its behavior stays explainable and testable. The **Chat** tab can also call Apple's public iTunes Search API for real-world song lookup requests, such as "Find Boulevard of Broken Dreams from the internet." External results are shown as catalog search matches and are not scored with the local mood/energy formula.
+
+## Sample Interactions
+
+### 1. Structured recommendation
+
+**Input:** In the Recommendations tab, choose `genre=pop`, `mood=happy`, `energy=0.80`, and allow explicit lyrics.
+
+**Output:** The app returns ranked cards such as `Sunrise City` by Neon Echo near the top, with reasons like genre match, mood match, and close energy proximity. Each card exposes the score and the signals that contributed to it.
+
+### 2. Chat with local RAG
+
+**Input:**
+
+```text
+I want very dramatic music with violins.
+```
+
+**Output:**
+
+```text
+Based on this catalog, I would try:
+- Rain on Glass by Arcana Strings [song-14]: a clean classical instrumental song with a melancholic mood, low energy, high acousticness, and inferred instrument tags including strings, violins, piano, and orchestral.
+```
+
+### 3. Chat with external search
+
+**Input:**
+
+```text
+Find Boulevard of Broken Dreams from the internet.
+```
+
+**Output:**
+
+```text
+I could not answer that from the local 36-song project catalog, so I searched the iTunes music catalog and found:
+- Boulevard of Broken Dreams by Green Day - American Idiot (Alternative, clean). Open in iTunes.
+```
+
+### 4. Guardrail behavior
+
+**Input:**
+
+```text
+What instruments are used in a song that is not in the catalog?
+```
+
+**Output:** If the app cannot retrieve reliable local or external context, it returns a safe message saying it could not answer confidently instead of inventing details.
+
+## Design Decisions
+
+- **Local catalog first:** The core recommender uses `data/songs.csv` so scoring stays transparent, reproducible, and easy to test.
+- **RAG in Chat:** Natural-language questions retrieve local song/project context before answering, which makes the Chat feature meaningfully change the app behavior instead of being a separate demo script.
+- **Gemini is optional:** The app works without an API key through deterministic retrieval-based fallback. This keeps setup reproducible for graders or employers.
+- **External search is separate from scoring:** iTunes lookup expands real-world song coverage, but those results are labeled as external catalog matches and are not mixed into the local weighted recommender.
+- **Guardrails over guessing:** Gemini answers are accepted only when grounded in retrieved context. Unsupported questions get a clear failure response.
+
+The main trade-off is scope versus explainability. A 36-song catalog is small, but it allows every recommendation to be audited. External search gives broader coverage, but it does not include the same mood/energy metadata, so those results are intentionally treated differently.
+
+### Reliability, Logging, and Guardrails
+
+- **Tests:** `tests/test_recommender.py` checks recommendation ordering, catalog loading, explicit filtering, playlist generation, RAG retrieval, grounded fallback behavior, outside-catalog guardrails, and external-search routing.
+- **Guardrails:** Chat answers are grounded in retrieved chunks. Gemini responses are rejected if they do not cite retrieved context. If the app cannot answer from local or external sources, it says so instead of inventing a result.
+- **Logging:** The app logs catalog loading, RAG retrieval decisions, Gemini generation attempts, external iTunes search attempts, external-search failures, and fallback paths.
+- **Reproducibility:** The core recommender and local RAG fallback work without any API key. Gemini is optional through `GEMINI_API_KEY`.
+
+## Testing Summary
+
+Automated testing currently passes with `11 out of 11 tests passed`. The tests confirm that recommendations are sorted correctly, the expanded catalog loads with new fields, explicit filtering works, playlist generation returns ranked clean results, RAG retrieves relevant catalog context, outside-catalog questions are guarded, and external-search routing can be tested without depending on live network calls.
+
+What worked well: local catalog retrieval is predictable, and the deterministic fallback makes the Chat usable even without Gemini. What needed adjustment: early RAG output exposed raw document chunks, so the retrieval path was changed to prioritize song chunks for music requests and reject weak answers. The biggest learning was that retrieval ranking matters as much as generation; if the wrong context wins, the answer will feel wrong even when the model is functioning.
+
+Reliability improved after adding validation rules. Before the guardrails, a missing Gemini key caused the Chat to show raw retrieved project notes instead of a useful music answer. After the fix, music requests retrieve song chunks first, outside-catalog questions use iTunes search or return a safe failure message, and Gemini answers are rejected if they do not cite retrieved context.
+
+Reliability snapshot:
+
+| Check | Result |
+|---|---|
+| Automated tests | 11/11 passed |
+| Missing Gemini key | App still works through deterministic local fallback |
+| Missing local context | App says it could not answer or tries external search |
+| Unsupported outside-catalog facts | Guarded instead of guessed |
+| External API failure | Logged and handled with a safe no-result message |
+
+### Rubric Alignment
+
+| Requirement | How this project meets it |
+|---|---|
+| Useful AI behavior | Recommends music, explains matches, answers music questions, and searches real song metadata when needed |
+| Retrieval-Augmented Generation | Chat retrieves catalog songs, playlist presets, and project docs before answering |
+| Integrated into main app | RAG is part of the Streamlit **Chat** tab, not a standalone script |
+| Reliability/testing | Automated tests cover recommender behavior, RAG retrieval, guardrails, and external-search routing |
+| Logging/guardrails | Logging tracks retrieval/search paths; guardrails prevent unsupported or ungrounded answers |
+| Clear setup | README includes install, run, test, optional Gemini, and external-search notes |
 
 ### Running Tests
 
@@ -391,11 +553,16 @@ See [model_card.md](model_card.md) for a deeper analysis of each limitation.
 
 ---
 
-## Reflection
+## Reflection and Ethics
 
 → Full analysis in [model_card.md](model_card.md)
 
-Building this project made visible something that is easy to miss when you use Spotify or YouTube: recommendations are the output of arithmetic. A song rises to the top not because the system "understood" what you wanted, but because numbers lined up in a way that produced a high score. The Chill Lofi Study profile returned exactly the right songs — but that felt meaningful only because the weights happened to reflect real musical taste. Change two numbers and the whole system shifts. That is a lot of power to put in a weight table that no one usually sees.
+**Limitations and bias:** The system is limited by its small local catalog, exact-string mood labels, and hand-chosen weights. Genre is especially powerful, which can make the recommender overvalue a matching genre even when mood or energy is wrong. The external iTunes search also reflects what that catalog returns; it is useful for lookup, but it does not provide the same mood/energy metadata as the local dataset.
 
-The clearest lesson about bias came from the adversarial test. A metal song with energy 0.97 outranked a country song that genuinely matched the user's peaceful, low-energy request — purely because the genre label string matched. No real listener would accept that result, but the math produced it without hesitation. This is exactly how real systems can silently over-recommend certain genres or artists at scale, and why publishing a model card — documenting what the system does and does not do — is an important practice even for small projects.
+**Misuse prevention:** A user could misuse the Chat by treating it as a complete music knowledge source or assuming it knows every song's instruments, lyrics, or meaning. To reduce that risk, the app labels external results separately, refuses unsupported answers, rejects ungrounded Gemini responses, and keeps the local recommendation scores visible. API keys are also kept out of the repository through environment variables or Streamlit secrets.
 
+**What surprised me during reliability testing:** The biggest surprise was that the first RAG version could retrieve technically relevant project documentation but still produce a bad user experience. For example, a study-music request returned feature-change notes instead of songs because document chunks outranked song chunks. Fixing that required better retrieval routing, not just a better prompt.
+
+**Collaboration with AI:** AI assistance was helpful when designing the RAG pipeline: it suggested separating retrieval, prompt construction, Gemini generation, fallback behavior, and tests into focused functions. That made the system easier to verify. One flawed suggestion was assuming that once Gemini was connected, the answer quality problem would be solved. In practice, the issue was retrieval quality and grounding, so I had to test the outputs, notice the wrong context, and add song-first retrieval plus guardrails.
+
+**Overall reflection:** Building this project made visible something that is easy to miss when using Spotify or YouTube: recommendations are the output of arithmetic and retrieval choices. A song rises to the top not because the system truly understands the listener, but because weights, filters, and retrieved context line up in a certain way. The project taught me that useful AI systems need more than generation; they need clear data boundaries, failure behavior, logging, and tests.
